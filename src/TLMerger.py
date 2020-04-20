@@ -7,7 +7,7 @@ try:
 except:
     pass
 
-from datetime import date
+from datetime import date, timedelta
 from sys import exit
 from getpass import getpass
 from telethon.sync import TelegramClient, events
@@ -91,15 +91,15 @@ def StartClient2():
     return
 
 async def EventHandler(event):
-    global SecretMessage, secretdbstream
-    if getattr(event.original_message, 'media', None):
-        if isinstance(event.original_message.media, (MessageMediaDocument, Document)):
-            for attr in event.original_message.media.document.attributes:
+    global SecretMessage, secretdbstream, SecretChosenChat
+    if getattr(event.message, 'media', None):
+        if isinstance(event.message.media, (MessageMediaDocument, Document)):
+            for attr in event.message.media.document.attributes:
                 if isinstance(attr, DocumentAttributeFilename):
                     if attr.file_name == "DB.aes":
                         print("\nResponse received! Processing...")
-                        secretdbstream = await client1.download_media(event.original_message, file=bytes)
-                        SecretMessage = await client1.send_message(ChosenChat, "WooHoo!")
+                        secretdbstream = await client1.download_media(event.message, file=bytes)
+                        SecretMessage = await client1.send_message(SecretChosenChat, "WooHoo!")
                         await client1.disconnect()
     return
 
@@ -596,7 +596,6 @@ def StartSecretMode():
     client1.run_until_disconnected()
     client1.connect()
     client1.remove_event_handler(EventHandler, events.NewMessage(chats=SecretChosenChat, incoming=True))
-    client1.delete_messages(ChosenChat, SecretMessage.id, revoke=True)
     byteDec = io.BytesIO()
     byteIn = io.BytesIO(secretdbstream)
     pyAesCrypt.decryptStream(byteIn, byteDec, password, bufferSize, len(byteIn.getvalue()))
@@ -645,7 +644,7 @@ def HandleExceptions():
 def countdown(t):
     print("\n\n")
     while t:
-        timeformat = '--> We have reached a flood limitation. Waiting for: ' + str(datetime.timedelta(seconds=t))
+        timeformat = '--> We have reached a flood limitation. Waiting for: ' + str(timedelta(seconds=t))
         print(timeformat, end='\r')
         time.sleep(1)
         t -= 1
@@ -1022,7 +1021,7 @@ def GatherAllMessages(chat):
                 UnknownClass = None
                 if isinstance(msg.media, (MessageMediaWebPage, WebPageEmpty, WebPage)):
                     mediaType = "WebPage Preview"
-                elif isinstance(msg.media, (MessageMediaGeo, GeoPoint)):
+                elif isinstance(msg.media, (MessageMediaGeo, GeoPoint, MessageMediaGeoLive)):
                     mediaType = "Geo"
                     reg = (msg.id, msg.media.geo.long, msg.media.geo.lat)
                     db.execute("INSERT INTO GeoMediaInfo VALUES(?,?,?)", reg)
@@ -1090,11 +1089,10 @@ def GatherAllMessages(chat):
                         reg21 = (
                         msg.id, msg.media.document.id, msg.media.document.access_hash, None)
                         db.execute("INSERT INTO DocumentMediaInfo VALUES(?,?,?,?)", reg21)
-                       
                 else:
                     logging.warning("TLMERGER EXCEPTION IN GATHERINGCHATS: Media Conditions weren't met.")
                     mediaType = "Unknown"
-                    UnknownClass = type(msg).__name__
+                    UnknownClass = type(msg.media).__name__
                 if (mediaType == "WebPage Preview" or (mediaType == "Animated GIF" and mimeType == "image/gif")):
                     os.makedirs('data/Media/' + str(msg.id), exist_ok=True)
                     path = ("data/Media/" + str(msg.id))
@@ -1128,7 +1126,7 @@ def GatherAllMessages(chat):
                     if isinstance(msg.action, MessageActionPhoneCall):
                         if msg.action.duration is not None:
                             message = "📞 **Phone call from " + sender + "**\n`" + str(
-                                datetime.timedelta(seconds=msg.action.duration)) + "` in call. 📞"
+                                timedelta(seconds=msg.action.duration)) + "` in call. 📞"
                         elif getattr(msg.action, "reason", None):
                             if isinstance(msg.action.reason, (PhoneCallDiscardReasonMissed, PhoneCallDiscardReasonBusy, PhoneCallDiscardReasonDisconnect)):
                                 message = "📞 **Missed phone call from " + sender + "** 📞"
@@ -1170,7 +1168,7 @@ def GatherAllMessages(chat):
         DBConnection(False, True)
         bar.finish()
         messages.clear()
-        print("\nDone! Backed up ", count, " messages and ", len(found_media), " files.")
+        print("\nDone! Backed up", count, "messages and", len(found_media), "files.")
     except Exception as e:
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN GATHERALLMESSAGES: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
@@ -3354,6 +3352,7 @@ os.mkdir('data')
 print("\nCreating database...")	
 database = DBConnection(True, False)
 CreateTables(database)
+getpass("\nNow, you must choose the chat from which we are going to copy the messages: The 'Source' chat. Press ENTER to continue: ")
 print("Gathering chat list from " + SelfUser1.first_name + "...")
 ChosenChat = PrintChatList()
 GatherAllMessages(ChosenChat)
