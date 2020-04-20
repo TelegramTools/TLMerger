@@ -1277,6 +1277,7 @@ def ExportMessages():
             b.update(cmplt)
         database.commit()
         ToDelete = []
+        print("\n")
         barr = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
         for msg in MsgIDs:
             if len(ToDelete) == 100:
@@ -1348,7 +1349,8 @@ def ExportMessages():
             elif row[5] == 0:
                 system_message = False
             reply_to_msg_id = row[6] #int
-            via_bot_username = "**" + row[7] + "**"
+            if row[7] is not None:
+                via_bot_username = "**" + row[7] + "**"
             fwd_from_id = row[8] #int
             if row[9] == 1:
                 fwd_from_channel = True #bool
