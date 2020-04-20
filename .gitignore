@@ -3,3 +3,8 @@ env
 *.session*
 *.db*
 *.log
+data
+*.exe
+dist
+__pycache__
+*.spec
