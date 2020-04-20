@@ -900,7 +900,7 @@ def CreateTables(db):
     cursor.execute('''
     CREATE TABLE MediaPaths(message_id INTEGER PRIMARY KEY, FileName TEXT, hint_path TEXT)''')
     cursor.execute('''
-    CREATE TABLE ContactMediaInfo(message_id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, phone TEXT)''')
+    CREATE TABLE ContactMediaInfo(message_id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, phone TEXT, vcard TEXT)''')
     cursor.execute('''
     CREATE TABLE PhotoMediaInfo(message_id INTEGER PRIMARY KEY, DocumentID LONG, AccessHash LONG, AccessHashUser2 LONG, FileReferenceUser1 BLOB, FileReferenceUser2 BLOB)''')
     cursor.execute('''
@@ -1031,8 +1031,8 @@ def GatherAllMessages(chat):
                     db.execute("INSERT INTO VenueMediaInfo VALUES(?,?,?,?,?,?,?,?)", reg8)
                 elif isinstance(msg.media, (MessageMediaContact, Contact)):
                     mediaType = "Contact"
-                    reg1 = (msg.id, msg.media.first_name, msg.media.last_name, msg.media.phone_number)
-                    db.execute("INSERT INTO ContactMediaInfo VALUES(?,?,?,?)", reg1)
+                    reg1 = (msg.id, msg.media.first_name, msg.media.last_name, msg.media.phone_number, msg.media.vcard)
+                    db.execute("INSERT INTO ContactMediaInfo VALUES(?,?,?,?,?)", reg1)
                     mimeType = None
                 elif isinstance(msg.media, (Game, MessageMediaGame)):
                     mediaType = "Game"
@@ -1251,20 +1251,10 @@ def ExportMessages():
             complete = complete + 1
             b.update(complete)
         Placeholder.clear()
-        PlaceHolderDel = []
-        for holder in msg2placeholder:
-            if len(PlaceHolderDel) == 100:
-                DeleteMessageClient2(user1, message_ids=PlaceHolderDel, revoke=True)
-                PlaceHolderDel.clear()
-            PlaceHolderDel.append(holder)
-        if len(PlaceHolderDel) != 0:
-            DeleteMessageClient2(user1, message_ids=PlaceHolderDel, revoke=True)
-            PlaceHolderDel.clear()
-        b.finish()        
-        br = progressbar.ProgressBar(max_value=length)
-        br.start()
+        DeleteMessageClient2(user1, message_ids=msg2placeholder, revoke=True)
+        b.finish()
+        print("\nFetching media metadata from the receiver account...\nPlease wait, this can take a while...")
         docmsg = client2.get_messages(user1, limit=length)
-        cmplt = 0
         for msg in docmsg:
             if getattr(msg, 'media', None):
                 if isinstance(msg.media, (MessageMediaDocument, Document)):
@@ -1273,21 +1263,8 @@ def ExportMessages():
                 elif isinstance(msg.media, (MessageMediaPhoto, Photo, PhotoSize, PhotoCachedSize)):
                     database.execute("UPDATE PhotoMediaInfo SET AccessHashUser2=?, FileReferenceUser2=? WHERE DocumentID=?",
                         (msg.media.photo.access_hash, msg.media.photo.file_reference, msg.media.photo.id))
-            cmplt = cmplt + 1
-            b.update(cmplt)
         database.commit()
-        ToDelete = []
-        print("\n")
-        barr = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
-        for msg in MsgIDs:
-            if len(ToDelete) == 100:
-                DeleteMessageClient1(user2, message_ids=ToDelete, revoke=True)
-                ToDelete.clear()
-            ToDelete.append(msg)
-            barr.update()
-        if len(ToDelete) != 0:
-            DeleteMessageClient1(user2, message_ids=ToDelete, revoke=True)
-            ToDelete.clear()
+        DeleteMessageClient1(user2, message_ids=MsgIDs, revoke=True)
         MsgIDs.clear()
         AccessHash.clear()
         DocID.clear()
@@ -1295,7 +1272,6 @@ def ExportMessages():
         PhotoAccHash.clear()
         PhotoFileRef.clear()
         DocFileRef.clear()
-        barr.finish()
         print("\n\nEverything is prepared and ready. Copying messages to the new chat...")
     print("\nINFORMATION: Each 2000 messages, a pause of around 7 minutes will be done for reducing Telegram's flood limits.\nBe patient, the process will be still going on.")
     completed = 0
@@ -1351,6 +1327,8 @@ def ExportMessages():
             reply_to_msg_id = row[6] #int
             if row[7] is not None:
                 via_bot_username = "**" + row[7] + "**"
+            else:
+                via_bot_username = None
             fwd_from_id = row[8] #int
             if row[9] == 1:
                 fwd_from_channel = True #bool
@@ -2462,11 +2440,12 @@ def ExportMessages():
                         first_name = row[1]
                         last_name = row[2]
                         phoneNumber = row[3]
+                        vcard = row[4]
                         if out is True:
                             if fwd_from_id is None:
                                 if reply_to_msg_id is None:
                                     if AgressiveTimestamps is True:
-                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                         result = SendRequestClient1(request)
                                         msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
@@ -2476,12 +2455,12 @@ def ExportMessages():
                                             User2IDs.append(GetIncomingIdOfUser1(user1))
 
                                     else:
-                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                         result = SendRequestClient1(request)
                                         msg = client1._get_response_message(request, result, user2)
                                 else:
                                     if AgressiveTimestamps is True:
-                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
+                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
                                         msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
@@ -2490,12 +2469,12 @@ def ExportMessages():
                                         if not SoloImporting:
                                             User2IDs.append(GetIncomingIdOfUser1(user1))
                                     else:
-                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
+                                        request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
                                         msg = client1._get_response_message(request, result, user2)
                             else:
                                 if AgressiveTimestamps is True:
-                                    request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                    request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                     result = SendRequestClient1(request)
                                     msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
@@ -2507,7 +2486,7 @@ def ExportMessages():
                                     if not SoloImporting:
                                         User2IDs.append(GetIncomingIdOfUser1(user1))
                                 else:
-                                    request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                    request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                     result = SendRequestClient1(request)
                                     msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
@@ -2519,7 +2498,7 @@ def ExportMessages():
                             if fwd_from_id is None:
                                 if reply_to_msg_id is None:
                                     if AgressiveTimestamps is True:
-                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                         result = SendRequestClient2(request)
                                         msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
@@ -2527,12 +2506,12 @@ def ExportMessages():
                                         User2IDs.append(msg2.id)
                                         User1IDs.append(GetIncomingIdOfUser2(user2))
                                     else:
-                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                         result = SendRequestClient2(request)
                                         msg = client2._get_response_message(request, result, user1)
                                 else:
                                     if AgressiveTimestamps is True:
-                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
+                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
                                         msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
@@ -2540,12 +2519,12 @@ def ExportMessages():
                                         User2IDs.append(msg2.id)
                                         User1IDs.append(GetIncomingIdOfUser2(user2))
                                     else:
-                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
+                                        request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
                                         msg = client2._get_response_message(request, result, user1)
                             else:
                                 if AgressiveTimestamps is True:
-                                    request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                    request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                     result = SendRequestClient2(request)
                                     msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
@@ -2556,7 +2535,7 @@ def ExportMessages():
                                     User2IDs.append(msg2.id)
                                     User1IDs.append(GetIncomingIdOfUser2(user2))
                                 else:
-                                    request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
+                                    request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name, vcard), message=message)
                                     result = SendRequestClient2(request)
                                     msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
