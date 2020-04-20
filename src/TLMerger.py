@@ -1,24 +1,16 @@
-##### THIS SCRIPT HAS BEEN MADE BY FERFERGA. PLEASE, DON'T CLAIM THAT IT'S YOURS.
-##### GIVE ALWAYS CREDITS TO ORIGINAL AUTHORS.
-#####
-##### THANKS FOR USING!
-
-import datetime
-import getpass
-import logging
-import shutil
-import sqlite3
-import sys
-import time
+#!/usr/bin/python3
+import logging, shutil, sqlite3, os, time
+import progressbar  # progressbar2 module
 try:
     import cryptg
     from cryptg import *
 except:
     pass
-from os import mkdir
 
-import progressbar  # progressbar2 module
-from telethon import TelegramClient, events
+from datetime import date
+from sys import exit
+from getpass import getpass
+from telethon.sync import TelegramClient, events
 from telethon.errors import FloodWaitError
 from telethon.crypto import AuthKey
 from telethon.tl.functions.messages import *
@@ -31,7 +23,7 @@ api_id = YOUR_API_ID_HERE
 api_hash = 'YOUR_API_HASH_HERE'
 TLdevice_model = 'Desktop device'
 TLsystem_version = 'Console'
-TLapp_version = '- TLMerger 1.0'
+TLapp_version = '- TLMerger 1.1'
 TLlang_code = 'en'
 TLsystem_lang_code = 'en'
 found_media = {}
@@ -68,12 +60,10 @@ SecretMode = False
 password = "YOUR_PASSWORD_FOR_SECRET_MODE_HERE"
 bufferSize = 64 * 1024
 
-#client1 = TelegramClient('User1', api_id, api_hash, device_model=TLdevice_model, system_version=TLsystem_version, app_version=TLapp_version, lang_code=TLlang_code, system_lang_code=TLsystem_lang_code) TO USE IN TELETHON 1.0 AND FORWARD
-client1 = TelegramClient('User1', api_id, api_hash, device_model=TLdevice_model, system_version=TLsystem_version, app_version=TLapp_version, lang_code=TLlang_code, system_lang_code=TLsystem_lang_code, spawn_read_thread=False, update_workers=1)
+client1 = TelegramClient('User1', api_id, api_hash, device_model=TLdevice_model, system_version=TLsystem_version, app_version=TLapp_version, lang_code=TLlang_code, system_lang_code=TLsystem_lang_code)
 
 def StartClient1():
-    global SelfUser1
-    global client1
+    global SelfUser1, client1
     try:
         client1.connect()
         if not client1.is_user_authorized():
@@ -81,13 +71,12 @@ def StartClient1():
         SelfUser1 = client1.get_me()
     except:
         if not client1.is_connected():
-            getpass.getpass("You are not connected to the internet or the phone was given in the incorrect format. Check your connection and press ENTER to try again: ")
+            getpass("You are not connected to the internet or the phone was given in the incorrect format. Check your connection and press ENTER to try again: ")
         StartClient1()
     return
 
 def StartClient2():
-    global SelfUser2
-    global client2
+    global SelfUser2, client2
     try:
         client2.connect()
         if not client2.is_user_authorized():
@@ -95,12 +84,12 @@ def StartClient2():
         SelfUser2 = client2.get_me()
     except:
         if not client2.is_connected():
-            getpass.getpass(
+            getpass(
             "You are not connected to the internet or the phone was given in the incorrect format. Check your connection and press ENTER to try again: ")
         StartClient1()
     return
 
-def EventHandler(event):
+async def EventHandler(event):
     global SecretMessage
     if getattr(event.original_message, 'media', None):
         if isinstance(event.original_message.media, (MessageMediaDocument, Document)):
@@ -112,9 +101,9 @@ def EventHandler(event):
                             os.remove("DB.aes")
                         except:
                             pass
-                        client1.download_media(event.original_message)
-                        SecretMessage = client1.send_message(ChosenChat, "WooHoo!")
-                        client1.disconnect()
+                        await client1.download_media(event.original_message)
+                        SecretMessage = await client1.send_message(ChosenChat, "WooHoo!")
+                        await client1.disconnect()
     return
 
 def AskSoloMode():
@@ -215,12 +204,7 @@ def ChangeFwdHeaderSettings():
         return
 
 def ChangeTimestampSettings():
-    global AgressiveTimestamps
-    global NoTimestamps
-    global DateSeconds
-    global YYYYMMDD
-    global DateEnd
-    global ReversedDate
+    global AgressiveTimestamps, NoTimestamps, DateSeconds, YYYYMMDD, DateEnd, ReversedDate
     answer = None
     answer1 = None
     answer2 = None
@@ -566,7 +550,7 @@ def PrintChatList():
         while i is None:
             print("This is the chat list:\n\n")
             for i, dialog in enumerate(dialogs, start=1):
-                if get_display_name(dialog.entity) is "":
+                if get_display_name(dialog.entity) == "":
                     name = "Deleted Account"
                 elif isinstance(dialog.entity, InputPeerSelf):
                     name = "Chat with yourself (Saved Messages)"
@@ -587,10 +571,10 @@ def PrintChatList():
             if i is None:
                 continue
             if i == '!q':
-                sys.exit()
+                exit()
             if i == '!l':
                 client1.log_out()
-                sys.exit()
+                exit()
         try:
             i = int(i if i else 0) - 1
             # Ensure it is inside the bounds, otherwise retry
@@ -607,13 +591,12 @@ def PrintChatList():
 
 def StartSecretMode():
     global dialogs, SecretChosenChat, password, bufferSize, client2, SecretMessage
-    getpass.getpass("\n\nYou have chosen to use the Telegram Tool's secret mode for logging your partner in Telegram.\nNow, it's time to choose your partner in your chat list. Press ENTER to continue: ")
+    getpass("\n\nYou have chosen to use the Telegram Tool's secret mode for logging your partner in Telegram.\nNow, it's time to choose your partner in your chat list. Press ENTER to continue: ")
     print("\nGathering your chat list...")
     SecretChosenChat = PrintChatList()
     print("\n\nWaiting for a response from your partner...")
     client1.add_event_handler(EventHandler, events.NewMessage(chats=SecretChosenChat, incoming=True))
-    #client1.run_until_disconnected() TO USE FORWARD 1.0 TELETHON VERSION
-    client1.idle()
+    client1.run_until_disconnected()
     pyAesCrypt.decryptFile("DB.aes", "TempDB.session", password, bufferSize)
     old_db = sqlite3.connect('TempDB.session')
     db = old_db.cursor()
@@ -644,9 +627,7 @@ def StartSecretMode():
     print("Secret Mode's Authentication done successfully!")
 
 def HandleExceptions():
-    global SelfUser1
-    global peer
-    global SendDatabase
+    global SelfUser1, peer, SendDatabase
     answer = None
     print("\n\n")
     print("It seems that you have already reached some problems before. You can keep retrying again, or exit TLMerger and report this error in\nhttps://github.com/TelegramTools/TLMerger/issues.")
@@ -676,8 +657,8 @@ def HandleExceptions():
                                            caption="This is the TLMerger's database with " + peer)
             SendMessageClient1(SelfUser1,
                                "💾 You can read this database using programs like https://github.com/sqlitebrowser/sqlitebrowser/releases. This database is **mandatory** if you want to use [TLRevert](https://github.com/TelegramTools/TLRevert) in order to revert all the changes made by TLMerger. Read the manuals of both programs if you have any doubt about them. **Thank you very much for using** [TLMerger](https://github.com/TelegramTools/TLMerger)**!**\n\n**--ferferga**", reply_to=databasecopy.id)
-        getpass.getpass("\n\nYou can close TLMerger by pressing ENTER: ")
-        sys.exit(0)
+        getpass("\n\nYou can close TLMerger by pressing ENTER: ")
+        exit(0)
     return
 
 def countdown(t):
@@ -700,7 +681,7 @@ def SendMessageClient1(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN SendFileClient1: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))        
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -719,7 +700,7 @@ def SendFileClient2(*args, **kwargs):
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         ExceptionReached = True
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -738,7 +719,7 @@ def SendFileClient1(*args, **kwargs):
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         ExceptionReached = True
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -756,7 +737,7 @@ def SendMessageClient2(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN SendMessageClient2: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -774,7 +755,7 @@ def ForwardMessageClient1(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN ForwardMessageClient1: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -792,7 +773,7 @@ def ForwardMessageClient2(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN ForwardMessageClient2: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -810,7 +791,7 @@ def DeleteMessageClient1(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN DeleteMessageClient1: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -828,7 +809,7 @@ def DeleteMessageClient2(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN DeleteMessageClient2: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -846,7 +827,7 @@ def SendRequestClient1(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN SendRequestClient1: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -864,7 +845,7 @@ def SendRequestClient2(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN SendRequestClient2: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -882,7 +863,7 @@ def GetIncomingIdOfUser1(u):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN GETINCOMINGIDOFUSER1: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -900,7 +881,7 @@ def GetIncomingIdOfUser2(u):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN GETINCOMINGIDOFUSER2: " + str(e))
         print("Something went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -918,7 +899,7 @@ def DownloadMedia(*args, **kwargs):
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN DownloadMedia: " + str(e))
         print("Something went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
         if ExceptionReached is False:
-            getpass.getpass("Press ENTER to try again: ")
+            getpass("Press ENTER to try again: ")
             ExceptionReached = True
         else:
             HandleExceptions()
@@ -951,18 +932,13 @@ def CreateTables(db):
     cursor.execute('''
     CREATE TABLE Version(AppName TEXT, AppVersion TEXT, CreationDate TEXT)''')
     db.commit()
-    date = str(datetime.datetime.today())
-    reg = ("TLMerger", "1.0", date)
+    current_date = str(date.today())
+    reg = ("TLMerger", "1.0", current_date)
     db.execute("INSERT INTO Version VALUES(?,?,?)", reg)
     db.commit()
 
 def CommitMessages(database, stats):
-    global User1IDs
-    global User2IDs
-    global SelfUser1
-    global SelfUser2
-    global SoloImporting
-    global client1, client2
+    global User1IDs, User2IDs, SelfUser1, SelfUser2, SoloImporting, client1, client2
     if database is None:
         database = DBConnection(False, False)
     try:
@@ -997,8 +973,7 @@ def CommitMessages(database, stats):
     return
 
 def GatherAllMessages(chat):
-    global PendingTweaks
-    global peer
+    global PendingTweaks, peer
     chatname = get_display_name(chat)
     if chatname == "":
         peer = input("\nThe chosen chat is with a Deleted Account. Please, define the name of your peer, which will be used for mentioning him correctly: ")
@@ -1218,12 +1193,14 @@ def GatherAllMessages(chat):
     except Exception as e:
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN GATHERALLMESSAGES: " + str(e))
         print("\nSomething went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
-        getpass.getpass("This part of the process can't be recovered. You must start from scratch.\n\nYou can report this issue at https://github.com/TelegramTools/TLMerger/issues/new. Please, give as much details as possible of the error message and attach the 'TLMerger-log.log' file, as all the detailed information about the bug has been written there.\n\nPress ENTER to close the app...")
-        sys.exit(0)
+        getpass("This part of the process can't be recovered. You must start from scratch.\n\nYou can report this issue at https://github.com/TelegramTools/TLMerger/issues/new. Please, give as much details as possible of the error message and attach the 'TLMerger-log.log' file, as all the detailed information about the bug has been written there.\n\nPress ENTER to close the app...")
+        exit(0)
     return
 
 def ExportMessages():
-    global Errors, SendAllLinkPreviews, SendDatabase, AgressiveTimestamps, YYYYMMDD, ReversedDate, DateSeconds, DateEnd, NoTimestamps, client1, client2, AppendHashtag, SelfUser1, SelfUser2, ChosenChat, DestinationChat, DeleteOriginalMessages, PendingTweaks, User1IDs, User2IDs, peer, SoloImporting
+    global Errors, SendAllLinkPreviews, SendDatabase, AgressiveTimestamps, YYYYMMDD, ReversedDate, DateSeconds, DateEnd, NoTimestamps, \
+        client1, client2, AppendHashtag, SelfUser1, SelfUser2, ChosenChat, DestinationChat, DeleteOriginalMessages, PendingTweaks, \
+        User1IDs, User2IDs, peer, SoloImporting
     print("\nProcessing...")
     client2.get_dialogs(limit=None)
     if not SoloImporting:
@@ -3346,8 +3323,8 @@ def ExportMessages():
                                            caption="This is the TLMerger's database with " + peer)
             SendMessageClient1(SelfUser1,
                                "💾 You can read this database using programs like https://github.com/sqlitebrowser/sqlitebrowser/releases. This database is **mandatory** if you want to use [TLRevert](https://github.com/TelegramTools/TLRevert) in order to revert all the changes made by TLMerger. Read the manuals of both programs if you have any doubt about them. **Thank you very much for using** [TLMerger](https://github.com/TelegramTools/TLMerger)**!**\n\n**--ferferga**", reply_to=databasecopy.id)
-        getpass.getpass("This part of the process can't be recovered. Press ENTER to close the app...")
-        sys.exit(0)
+        getpass("This part of the process can't be recovered. Press ENTER to close the app...")
+        exit(0)
 
 def DBConnection(first, close):
     try:
@@ -3392,7 +3369,7 @@ StartClient1()
 print("\n\nYou are logged in as " + SelfUser1.first_name + "!")
 if os.path.exists("data") is True:
     shutil.rmtree('data', ignore_errors=True)
-mkdir('data')
+os.mkdir('data')
 print("\nCreating database...")	
 database = DBConnection(True, False)
 CreateTables(database)
@@ -3403,7 +3380,7 @@ print("\n\nChecking the database's data...")
 Checkings()
 if Warnings is True:
     print("WARNING: Take in mind that some unknown messages were detected in the database. This means that some messages can be missed by TLMerger and they won't be copied to the new chat.\nYou should close the app, check if there are updates for it, and create a new issue at https://github.com/TelegramTools/TLMerger pasting the error messages above.\nYou can still continue, but you might lose messages")
-    getpass.getpass("Press ENTER to Continue. Close the app if you want to cancel the process.")
+    getpass("Press ENTER to Continue. Close the app if you want to cancel the process.")
 else:
     print("Nothing wrong detected. You are good to go!")
 AskSoloMode()
@@ -3517,7 +3494,7 @@ while True:
                 break
     if (answer == "!C"):
         if Warnings is True:
-            getpass.getpass("You are going to continue even you had some warnings while checking the database's data. Press ENTER to confirm.")
+            getpass("You are going to continue even you had some warnings while checking the database's data. Press ENTER to confirm.")
         break
     if (answer == "!1"):
         ChangeTimestampSettings()
@@ -3534,8 +3511,8 @@ while True:
     if (answer == "!7" and SoloImporting):
         ChangeSenderSettings()
 print()
-getpass.getpass("Take in mind that this might trigger some flood limits in Telegram. Press ENTER to continue: ")
-getpass.getpass("\nAlso, please, don't interact or chat with your partner while TLMerger is copying messages. This can lead to problems.\nPress ENTER to continue: ")
+getpass("Take in mind that this might trigger some flood limits in Telegram. Press ENTER to continue: ")
+getpass("\nAlso, please, don't interact or chat with your partner while TLMerger is copying messages. This can lead to problems.\nPress ENTER to continue: ")
 print("STARTED! Now copying the conversation in Telegram...")
 print()
 ExportMessages()
@@ -3545,7 +3522,7 @@ else:
     print("Everything went good and it seems that no errors happened during the execution of the app!")
 print()
 print()
-getpass.getpass("Press ENTER to log out of Telegram")
+getpass("Press ENTER to log out of Telegram")
 if not SoloImporting:
     print('\nLogging ' + SelfUser1.first_name + ' (+' + SelfUser1.phone + ') and ' + SelfUser2.first_name + ' (+' + SelfUser2.phone + ') out of Telegram...')
     client1.log_out()
@@ -3555,5 +3532,5 @@ else:
     client1.log_out()
 print("Thank you very much for using the app!\n\n--ferferga\n\nGOODBYE!")
 print()
-getpass.getpass("Press ENTER to close the app: ")
-sys.exit(0)
+getpass("Press ENTER to close the app: ")
+exit(0)
