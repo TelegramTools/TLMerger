@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import logging, shutil, sqlite3, os, time
+import logging, shutil, sqlite3, os, time, io
 import progressbar  # progressbar2 module
 try:
     import cryptg
@@ -58,7 +58,8 @@ SecretMessage = None
 SecretChosenChat = None
 SecretMode = False
 password = "YOUR_PASSWORD_FOR_SECRET_MODE_HERE"
-bufferSize = 64 * 1024
+bufferSize = 64 * 4096
+secretdbstream = None
 
 client1 = TelegramClient('User1', api_id, api_hash, device_model=TLdevice_model, system_version=TLsystem_version, app_version=TLapp_version, lang_code=TLlang_code, system_lang_code=TLsystem_lang_code)
 
@@ -90,18 +91,14 @@ def StartClient2():
     return
 
 async def EventHandler(event):
-    global SecretMessage
+    global SecretMessage, secretdbstream
     if getattr(event.original_message, 'media', None):
         if isinstance(event.original_message.media, (MessageMediaDocument, Document)):
             for attr in event.original_message.media.document.attributes:
                 if isinstance(attr, DocumentAttributeFilename):
                     if attr.file_name == "DB.aes":
                         print("\nResponse received! Processing...")
-                        try:
-                            os.remove("DB.aes")
-                        except:
-                            pass
-                        await client1.download_media(event.original_message)
+                        secretdbstream = await client1.download_media(event.original_message, file=bytes)
                         SecretMessage = await client1.send_message(ChosenChat, "WooHoo!")
                         await client1.disconnect()
     return
@@ -590,39 +587,23 @@ def PrintChatList():
         return dialogs[i].entity
 
 def StartSecretMode():
-    global dialogs, SecretChosenChat, password, bufferSize, client2, SecretMessage
+    global dialogs, SecretChosenChat, password, bufferSize, client2, SecretMessage, secretdbstream
     getpass("\n\nYou have chosen to use the Telegram Tool's secret mode for logging your partner in Telegram.\nNow, it's time to choose your partner in your chat list. Press ENTER to continue: ")
     print("\nGathering your chat list...")
     SecretChosenChat = PrintChatList()
     print("\n\nWaiting for a response from your partner...")
     client1.add_event_handler(EventHandler, events.NewMessage(chats=SecretChosenChat, incoming=True))
     client1.run_until_disconnected()
-    pyAesCrypt.decryptFile("DB.aes", "TempDB.session", password, bufferSize)
-    old_db = sqlite3.connect('TempDB.session')
-    db = old_db.cursor()
-    db.execute('SELECT * FROM sessions')
-    List = []
-    for row in db:
-        List.append(row[0])
-        List.append(row[1])
-        List.append(row[2])
-        List.append(row[3])
-    old_db.close()
-    try:
-        os.remove("DB.aes")
-        os.remove("TempDB.session")
-    except:
-        pass
-    client2 = TelegramClient(None, api_id, api_hash, device_model=TLdevice_model,
-                             system_version=TLsystem_version, app_version=TLapp_version, lang_code=TLlang_code,
-                             system_lang_code=TLsystem_lang_code)
-    client2.session.set_dc(List[0], List[1], List[2])
-    client2.session.auth_key = AuthKey(data=List[3])
-    #client2._sender.state.auth_key = AuthKey(data=List[3]) TO USE FORWARD 1.0 TELETHON VERSION
-    List.clear()
-    StartClient1()
+    client1.connect()
     client1.remove_event_handler(EventHandler, events.NewMessage(chats=SecretChosenChat, incoming=True))
     client1.delete_messages(ChosenChat, SecretMessage.id, revoke=True)
+    byteDec = io.BytesIO()
+    byteIn = io.BytesIO(secretdbstream)
+    pyAesCrypt.decryptStream(byteIn, byteDec, password, bufferSize, len(byteIn.getvalue()))
+    byteDec.seek(0)
+    client2 = TelegramClient(StringSession(byteDec.read().decode()), api_id, api_hash, device_model=TLdevice_model,
+                             system_version=TLsystem_version, app_version=TLapp_version, lang_code=TLlang_code,
+                             system_lang_code=TLsystem_lang_code)
     StartClient2()
     print("Secret Mode's Authentication done successfully!")
 
