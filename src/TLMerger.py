@@ -1233,7 +1233,7 @@ def ExportMessages():
             index = DocID.index(docid)
             request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=docid, access_hash=AccessHash[index], file_reference=DocFileRef[index])), message="")
             result = SendRequestClient1(request)
-            msg = client1._get_response_message(request, result)
+            msg = client1._get_response_message(request, result, user2)
             MsgIDs.append(msg.id)
             complete = complete + 1
             b.update(complete)
@@ -1246,7 +1246,7 @@ def ExportMessages():
             index = PhotoID.index(photoid)
             request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=photoid, access_hash=PhotoAccHash[index], file_reference=PhotoFileRef[index])), message="")
             result = SendRequestClient1(request)
-            msg = client1._get_response_message(request, result)
+            msg = client1._get_response_message(request, result, user2)
             MsgIDs.append(msg.id)
             complete = complete + 1
             b.update(complete)
@@ -1952,7 +1952,7 @@ def ExportMessages():
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=Access_Hash)), message=message)                                     
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -1966,18 +1966,18 @@ def ExportMessages():
                                                 id=InputPhoto(id=DocumentID, access_hash=Access_Hash)),
                                                                        message=message + date)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=Access_Hash)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                             else:
                                 if AgressiveTimestamps is True:
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=Access_Hash)), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -1992,18 +1992,18 @@ def ExportMessages():
                                                                        message=message + date,
                                                                        reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=Access_Hash)), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                         else:
                             if AgressiveTimestamps is True:
                                 if len(date+ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=Access_Hash)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     if DateEnd is False:
                                         msg2 = SendMessageClient1(user2, date + ForwardedHeader, reply_to=msg.id)
@@ -2020,13 +2020,13 @@ def ExportMessages():
                                             id=InputPhoto(id=DocumentID, access_hash=Access_Hash)),
                                                                    message=ForwardedHeader + message + date)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                             else:
                                 if len(ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=Access_Hash)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     msg2 = SendMessageClient1(user2, ForwardedHeader, reply_to=msg.id)
                                     User1IDs.append(msg2.id)
@@ -2035,7 +2035,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=Access_Hash)), message=ForwardedHeader+message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                     else:
                         if fwd_from_id is None:
@@ -2044,7 +2044,7 @@ def ExportMessages():
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=message)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                         msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                         User2IDs.append(msg2.id)
@@ -2057,18 +2057,18 @@ def ExportMessages():
                                                 id=InputPhoto(id=DocumentID, access_hash=AccHash2)),
                                                                        message=message + date)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                             else:
                                 if AgressiveTimestamps is True:
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                         msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                         User2IDs.append(msg2.id)
@@ -2082,18 +2082,18 @@ def ExportMessages():
                                                                        message=message + date,
                                                                        reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                         else:
                             if AgressiveTimestamps is True:
                                 if len(date+ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     if DateEnd is False:
                                         msg2 = SendMessageClient2(user1, date + ForwardedHeader, reply_to=msg.id)
@@ -2104,13 +2104,13 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=date+ForwardedHeader+message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                             else:
                                 if len(ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2118,7 +2118,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaPhoto(id=InputPhoto(id=DocumentID, access_hash=AccHash2)), message=ForwardedHeader+message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
 
                 elif DocType is True and (mediaType == "StickerPack" or mediaType == "HasSticker" or mediaType == "VideoNote"):
@@ -2143,7 +2143,7 @@ def ExportMessages():
                                     request = SendMediaRequest(user2, media=InputMediaDocument(
                                         id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                     User1IDs.append(msg2.id)
@@ -2153,14 +2153,14 @@ def ExportMessages():
                                     request = SendMediaRequest(user2, media=InputMediaDocument(
                                         id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user2, media=InputMediaDocument(
                                         id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message,
                                                                reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                     User1IDs.append(msg2.id)
@@ -2171,13 +2171,13 @@ def ExportMessages():
                                         id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message,
                                                                reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                         else:
                             if AgressiveTimestamps is True:
                                 request = SendMediaRequest(user2, media=InputMediaDocument(
                                     id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)
                                 result = SendRequestClient1(request)
-                                msg = client1._get_response_message(request, result)
+                                msg = client1._get_response_message(request, result, user2)
                                 NewUser2ID = GetIncomingIdOfUser1(user1)
                                 if DateEnd is True:
                                     msg2 = SendMessageClient1(user2, ForwardedHeader + date, reply_to=msg.id)
@@ -2190,7 +2190,7 @@ def ExportMessages():
                                 request = SendMediaRequest(user2, media=InputMediaDocument(
                                     id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)
                                 result = SendRequestClient1(request)
-                                msg = client1._get_response_message(request, result)
+                                msg = client1._get_response_message(request, result, user2)
                                 NewUser2ID = GetIncomingIdOfUser1(user1)
                                 msg2 = SendMessageClient1(user2, ForwardedHeader, reply_to=msg.id)
                                 User1IDs.append(msg2.id)
@@ -2203,7 +2203,7 @@ def ExportMessages():
                                     request = SendMediaRequest(user1, media=InputMediaDocument(
                                         id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2212,14 +2212,14 @@ def ExportMessages():
                                     request = SendMediaRequest(user1, media=InputMediaDocument(
                                         id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user1, media=InputMediaDocument(
                                         id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message,
                                                                reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2229,13 +2229,13 @@ def ExportMessages():
                                         id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message,
                                                                reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                         else:
                             if AgressiveTimestamps is True:
                                 request = SendMediaRequest(user1, media=InputMediaDocument(
                                     id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                 result = SendRequestClient2(request)
-                                msg = client2._get_response_message(request, result)
+                                msg = client2._get_response_message(request, result, user1)
                                 NewUser1ID = GetIncomingIdOfUser2(user2)
                                 if DateEnd is True:
                                     msg2 = SendMessageClient2(user1, ForwardedHeader + date, reply_to=msg.id)
@@ -2247,7 +2247,7 @@ def ExportMessages():
                                 request = SendMediaRequest(user1, media=InputMediaDocument(
                                     id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                 result = SendRequestClient2(request)
-                                msg = client2._get_response_message(request, result)
+                                msg = client2._get_response_message(request, result, user1)
                                 NewUser1ID = GetIncomingIdOfUser2(user2)
                                 msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                 User2IDs.append(msg2.id)
@@ -2275,7 +2275,7 @@ def ExportMessages():
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)                                     
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2289,18 +2289,18 @@ def ExportMessages():
                                                 id=InputDocument(id=DocumentID, access_hash=Access_Hash)),
                                                                        message=message + date)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                             else:
                                 if AgressiveTimestamps is True:
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2318,18 +2318,18 @@ def ExportMessages():
                                                                        message=message + date,
                                                                        reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                         else:
                             if AgressiveTimestamps is True:
                                 if len(date+ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     if DateEnd is True:
                                         msg2 = SendMessageClient1(user2, ForwardedHeader + date, reply_to=msg.id)
@@ -2346,13 +2346,13 @@ def ExportMessages():
                                             id=InputDocument(id=DocumentID, access_hash=Access_Hash)),
                                                                    message=ForwardedHeader + message + date)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                             else:
                                 if len(ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     msg2 = SendMessageClient1(user2, ForwardedHeader, reply_to=msg.id)
                                     User1IDs.append(msg2.id)
@@ -2361,7 +2361,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=Access_Hash, file_reference=FileRef)), message=ForwardedHeader+message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                     else:
                         if fwd_from_id is None:
@@ -2370,7 +2370,7 @@ def ExportMessages():
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user1, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                         msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                         User2IDs.append(msg2.id)
@@ -2383,18 +2383,18 @@ def ExportMessages():
                                                 id=InputDocument(id=DocumentID, access_hash=AccHash2)),
                                                                        message=message + date)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                             else:
                                 if AgressiveTimestamps is True:
                                     if len(date+message) > 200:
                                         request = SendMediaRequest(user1, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                         msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                         User2IDs.append(msg2.id)
@@ -2408,18 +2408,18 @@ def ExportMessages():
                                                                        message=message + date,
                                                                        reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                         else:
                             if AgressiveTimestamps is True:
                                 if len(date+ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user1, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     if DateEnd is True:
                                         msg2 = SendMessageClient2(user1, ForwardedHeader + date, reply_to=msg.id)
@@ -2435,13 +2435,13 @@ def ExportMessages():
                                             id=InputDocument(id=DocumentID, access_hash=AccHash2)),
                                                                    message=ForwardedHeader + message + date)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                             else:
                                 if len(ForwardedHeader+message) > 200:
                                     request = SendMediaRequest(user1, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2449,7 +2449,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaDocument(id=InputDocument(id=DocumentID, access_hash=AccHash2, file_reference=FileRef2)), message=ForwardedHeader+message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
 
                 elif mediaType == "Contact":
@@ -2466,7 +2466,7 @@ def ExportMessages():
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2476,12 +2476,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                 else:
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2490,12 +2490,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     if DateEnd is True:
                                         msg2 = SendMessageClient1(user2, ForwardedHeader + date, reply_to=msg.id)
@@ -2507,7 +2507,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     msg2 = SendMessageClient1(user2, ForwardedHeader, reply_to=msg.id)
                                     User1IDs.append(msg2.id)
@@ -2519,7 +2519,7 @@ def ExportMessages():
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                         msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                         User2IDs.append(msg2.id)
@@ -2527,12 +2527,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                 else:
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                                         NewUser1ID = GetIncomingIdOfUser2(user2)
                                         msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                         User2IDs.append(msg2.id)
@@ -2540,12 +2540,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient2(request)
-                                        msg = client2._get_response_message(request, result)
+                                        msg = client2._get_response_message(request, result, user1)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     if DateEnd is True:
                                         msg2 = SendMessageClient2(user1, ForwardedHeader + date, reply_to=msg.id)
@@ -2556,7 +2556,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaContact(phoneNumber, first_name, last_name), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2624,7 +2624,7 @@ def ExportMessages():
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user2, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2633,12 +2633,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user2, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                 else:
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user2, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2647,12 +2647,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user2, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user2, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     if DateEnd is True:
                                         msg2 = SendMessageClient1(user2, ForwardedHeader + date, reply_to=msg.id)
@@ -2664,7 +2664,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     msg2 = SendMessageClient1(user2, ForwardedHeader, reply_to=msg.id)
                                     User1IDs.append(msg2.id)
@@ -2676,7 +2676,7 @@ def ExportMessages():
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user1, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2684,12 +2684,12 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user1, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2697,12 +2697,12 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                         else:
                             if AgressiveTimestamps is True:
                                 request = SendMediaRequest(user1, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                 result = SendRequestClient2(request)
-                                msg = client2._get_response_message(request, result)
+                                msg = client2._get_response_message(request, result, user1)
                                 NewUser1ID = GetIncomingIdOfUser2(user2)
                                 if DateEnd is True:
                                     msg2 = SendMessageClient2(user1, ForwardedHeader + date, reply_to=msg.id)
@@ -2713,7 +2713,7 @@ def ExportMessages():
                             else:
                                 request = SendMediaRequest(user1, media=InputMediaVenue(InputGeoPoint(lat, long), title, address, provider, venue_id, venue_type), message=message)
                                 result = SendRequestClient2(request)
-                                msg = client2._get_response_message(request, result)
+                                msg = client2._get_response_message(request, result, user1)
                                 NewUser1ID = GetIncomingIdOfUser2(user2)
                                 msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                 User2IDs.append(msg2.id)
@@ -2734,7 +2734,7 @@ def ExportMessages():
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user2, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)                                        
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2743,12 +2743,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user2, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                 else:
                                     if AgressiveTimestamps is True:
                                         request = SendMediaRequest(user2, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                                         NewUser2ID = GetIncomingIdOfUser1(user1)
                                         msg2 = SendMessageClient1(user2, date, reply_to=msg.id)
                                         User1IDs.append(msg2.id)
@@ -2757,12 +2757,12 @@ def ExportMessages():
                                     else:
                                         request = SendMediaRequest(user2, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message, reply_to_msg_id=NewReplyId)
                                         result = SendRequestClient1(request)
-                                        msg = client1._get_response_message(request, result)
+                                        msg = client1._get_response_message(request, result, user2)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user2, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     if DateEnd is True:
                                         msg2 = SendMessageClient1(user2, ForwardedHeader + date, reply_to=msg.id)
@@ -2774,7 +2774,7 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user2, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)
                                     result = SendRequestClient1(request)
-                                    msg = client1._get_response_message(request, result)
+                                    msg = client1._get_response_message(request, result, user2)
                                     NewUser2ID = GetIncomingIdOfUser1(user1)
                                     msg2 = SendMessageClient1(user2, ForwardedHeader, reply_to=msg.id)
                                     User1IDs.append(msg2.id)
@@ -2786,7 +2786,7 @@ def ExportMessages():
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user1, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2794,12 +2794,12 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                             else:
                                 if AgressiveTimestamps is True:
                                     request = SendMediaRequest(user1, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
                                     msg2 = SendMessageClient2(user1, date, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
@@ -2807,12 +2807,12 @@ def ExportMessages():
                                 else:
                                     request = SendMediaRequest(user1, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message, reply_to_msg_id=NewReplyId)
                                     result = SendRequestClient2(request)
-                                    msg = client2._get_response_message(request, result)
+                                    msg = client2._get_response_message(request, result, user1)
                         else:
                             if AgressiveTimestamps is True:
                                 request = SendMediaRequest(user1, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)
                                 result = SendRequestClient2(request)
-                                msg = client2._get_response_message(request, result)
+                                msg = client2._get_response_message(request, result, user1)
                                 NewUser1ID = GetIncomingIdOfUser2(user2)
                                 if DateEnd is True:
                                     msg2 = SendMessageClient2(user1, ForwardedHeader + date, reply_to=msg.id)
@@ -2823,7 +2823,7 @@ def ExportMessages():
                             else:
                                 request = SendMediaRequest(user1, media=InputMediaGeoPoint(InputGeoPoint(lat, long)), message=message)
                                 result = SendRequestClient2(request)
-                                msg = client2._get_response_message(request, result)
+                                msg = client2._get_response_message(request, result, user1)
                                 NewUser1ID = GetIncomingIdOfUser2(user2)
                                 msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                 User2IDs.append(msg2.id)
