@@ -12,7 +12,6 @@ from sys import exit
 from getpass import getpass
 from telethon.sync import TelegramClient, events
 from telethon.errors import FloodWaitError
-from telethon.crypto import AuthKey
 from telethon.tl.functions.messages import *
 from telethon.tl.types import *
 from telethon.utils import *
