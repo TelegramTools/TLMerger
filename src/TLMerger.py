@@ -11,7 +11,7 @@ from datetime import date, timedelta
 from sys import exit
 from getpass import getpass
 from telethon.sync import TelegramClient, events
-from telethon.errors import FloodWaitError
+from telethon.errors import FloodWaitError, FilerefUpgradeNeededError
 from telethon.tl.functions.messages import *
 from telethon.tl.types import *
 from telethon.utils import *
@@ -879,6 +879,9 @@ def DownloadMedia(*args, **kwargs):
         logging.exception("TLMERGER FLOODEXCEPTION IN DownloadMedia: " + str(e))
         countdown(e.seconds)
         return DownloadMedia(*args, **kwargs)
+    except FilerefUpgradeNeededError:
+        raise FilerefUpgradeNeededError
+        return
     except Exception as e:
         logging.exception("TLMERGER TELEGRAMEXCEPTION IN DownloadMedia: " + str(e))
         print("Something went wrong in Telegram's side. This is the full exception:\n\n"  + str(e))
@@ -1102,7 +1105,11 @@ def GatherAllMessages(chat):
                 if (mediaType == "WebPage Preview" or (mediaType == "Animated GIF" and mimeType == "image/gif")):
                     os.makedirs('data/Media/' + str(msg.id), exist_ok=True)
                     path = ("data/Media/" + str(msg.id))
-                    output = DownloadMedia(msg.media, path)
+                    try:
+                        output = DownloadMedia(msg.media, path)
+                    except FilerefUpgradeNeededError:
+                        msg = client1.get_messages(chat, ids=msg.id)
+                        output = DownloadMedia(msg.media, path)
                     if (mediaType == "WebPage Preview" and output is None):
                         mediaType = "WebPage"
                     elif output is None:
