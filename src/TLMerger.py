@@ -29,6 +29,8 @@ TLsystem_lang_code = 'en'
 found_media = {}
 User1IDs = []
 User2IDs = []
+FetchableMsgIDs = []
+FetchableMsgIDsUser2 = []
 SelfUser1 = None
 SelfUser2 = None
 ChosenChat = None
@@ -45,7 +47,6 @@ AppendHashtag = False
 SendDatabase = True
 Warnings = False
 Errors = False
-PendingTweaks = False
 peer = None
 YYYYMMDD = True
 DateSeconds = True
@@ -53,6 +54,8 @@ DateEnd = False
 ReversedDate = False
 ExceptionReached = False
 client2 = None
+timezonediff = None
+count = None
 #SecretModeVariables
 SecretMessage = None
 SecretChosenChat = None
@@ -69,7 +72,7 @@ def StartClient1():
         client1.connect()
         if not client1.is_user_authorized():
             client1.start(force_sms=False)
-        SelfUser1 = client1.get_me()
+        SelfUser1 = client1.get_entity(client1.get_me())
     except:
         if not client1.is_connected():
             getpass("You are not connected to the internet or the phone was given in the incorrect format. Check your connection and press ENTER to try again: ")
@@ -82,7 +85,7 @@ def StartClient2():
         client2.connect()
         if not client2.is_user_authorized():
             client2.start(force_sms=False)
-        SelfUser2 = client2.get_me()
+        SelfUser2 = client2.get_entity(client2.get_me())
     except:
         if not client2.is_connected():
             getpass(
@@ -607,7 +610,7 @@ def StartSecretMode():
     print("Secret Mode's Authentication done successfully!")
 
 def HandleExceptions():
-    global SelfUser1, peer, SendDatabase
+    global SelfUser1, peer, SendDatabase, SelfUser2, FetchableMsgIDs, SoloImporting
     answer = None
     print("\n\n")
     print("It seems that you have already reached some problems before. You can keep retrying again, or exit TLMerger and report this error in\nhttps://github.com/TelegramTools/TLMerger/issues.")
@@ -628,6 +631,8 @@ def HandleExceptions():
         return
     if (answer == "!2"):
         CommitMessages(None, True)
+        if not SoloImporting:
+            DeleteMessageClient1(SelfUser2, message_ids=FetchableMsgIDs, revoke=True)
         print(
             "Changes saved! You can use TLRevert in case you want to revert the changes made by TLMerger in the future.\nYou will need to start from scratch if you want to continue the merging process later.")
         if SendDatabase is True:
@@ -887,6 +892,9 @@ def DownloadMedia(*args, **kwargs):
 
 def CreateTables(db):
     cursor = db.cursor()
+    cursor.execute("PRAGMA journal_mode = wal")
+    cursor.execute("PRAGMA read_uncommitted = true;")
+    db.commit()
     cursor.execute('''
     CREATE TABLE OriginalChat(sender TEXT, from_id INTEGER, message_id INTEGER PRIMARY KEY, message TEXT, out BOOLEAN, system_message BOOLEAN, reply_to_msg_id INTEGER, via_bot_username TEXT, fwd_from_id INTEGER, fwd_from_channel BOOLEAN, has_media BOOLEAN, DocType BOOLEAN, mediaType TEXT, mimeType TEXT, UnknownType BOOLEAN, UnknownClass TEXT, Day TEXT, Month TEXT, Year TEXT, Hour TEXT, Minute TEXT, Second TEXT)''')
     cursor.execute('''
@@ -913,34 +921,37 @@ def CreateTables(db):
     CREATE TABLE Version(AppName TEXT, AppVersion TEXT, CreationDate TEXT)''')
     db.commit()
     current_date = str(date.today())
-    reg = ("TLMerger", "1.0", current_date)
-    db.execute("INSERT INTO Version VALUES(?,?,?)", reg)
+    reg = ("TLMerger", "1.1", current_date)
+    cursor.execute("INSERT INTO Version VALUES(?,?,?)", reg)
     db.commit()
+    cursor.close()
 
 def CommitMessages(database, stats):
-    global User1IDs, User2IDs, SelfUser1, SelfUser2, SoloImporting, client1, client2
+    global User1IDs, User2IDs, SelfUser1, SelfUser2, SoloImporting, client1, client2, count
     if database is None:
         database = DBConnection(False, False)
     try:
         database.commit()
     except:
-        pass
+        database.close()
+        database = DBConnection(False, False)
+    cursor = database.cursor()
     if stats:
         if not SoloImporting:
-            reg8 = (SelfUser1.id, SelfUser2.id, SelfUser1.first_name + " (+" + SelfUser1.phone + ")", SelfUser2.first_name + " (+" + SelfUser2.phone + ")", client1.get_messages(user2, limit=0).total, client2.get_messages(user1, limit=0).total, count)
+            reg8 = (SelfUser1.id, SelfUser2.id, SelfUser1.first_name + " (+" + SelfUser1.phone + ")", SelfUser2.first_name + " (+" + SelfUser2.phone + ")", client1.get_messages(SelfUser2, limit=0).total, client2.get_messages(SelfUser1, limit=0).total, count, 1)
         else:
             reg8 = (SelfUser1.id, None, SelfUser1.first_name + " (+" + SelfUser1.phone + ")",
-                    None, client1.get_messages(user1, limit=0).total,
-                    None, None, SoloImporting)
-        database.execute("INSERT INTO Statistics VALUES(?,?,?,?,?,?,?,?)", reg8)
+                    None, client1.get_messages(SelfUser1, limit=0).total,
+                    None, count, 1)
+        cursor.execute("INSERT INTO Statistics VALUES(?,?,?,?,?,?,?,?)", reg8)
     for id1 in User1IDs:
         reg5 = (id1, None)
-        database.execute("INSERT INTO SentMessagesIDs VALUES(?,?)", reg5)
+        cursor.execute("INSERT INTO SentMessagesIDs VALUES(?,?)", reg5)
     database.commit()
     LoopingCount = 0
     for id1 in User1IDs:
         if len(User2IDs) != 0:
-            database.execute("UPDATE SentMessagesIDs SET User2={id} WHERE User1={user1id}". \
+            cursor.execute("UPDATE SentMessagesIDs SET User2={id} WHERE User1={user1id}". \
                              format(user1id=id1, id=User2IDs.pop(0)))
             LoopingCount = LoopingCount + 1
         else:
@@ -948,12 +959,13 @@ def CommitMessages(database, stats):
     if len(User2IDs) != 0:
         for id2 in User2IDs:
             reg5 = (None, id2)
-            database.execute("INSERT INTO SentMessagesIDs VALUES(?,?)", reg5)
+            cursor.execute("INSERT INTO SentMessagesIDs VALUES(?,?)", reg5)
     database.commit()
+    cursor.close()
     return
 
 def GatherAllMessages(chat):
-    global PendingTweaks, peer
+    global peer, timezonediff, count
     chatname = get_display_name(chat)
     if chatname == "":
         peer = input("\nThe chosen chat is with a Deleted Account. Please, define the name of your peer, which will be used for mentioning him correctly: ")
@@ -985,7 +997,7 @@ def GatherAllMessages(chat):
                 day = "0" + str(msg.date.day)
             else:
                 day = str(msg.date.day)
-            hour = str(msg.date.hour)
+            hour = str(msg.date.hour+timezonediff)
             if (msg.date.minute < 10):
                 minute = "0" + str(msg.date.minute)
             else:
@@ -1038,7 +1050,6 @@ def GatherAllMessages(chat):
                     mediaType = "Game"
                     mimeType = None
                 elif isinstance(msg.media, (MessageMediaPhoto, Photo, PhotoSize, PhotoCachedSize)):
-                    PendingTweaks = True
                     mediaType = "Photo"
                     if msg.out:
                         reg1 = (msg.id, msg.media.photo.id, msg.media.photo.access_hash, msg.media.photo.access_hash,
@@ -1052,7 +1063,6 @@ def GatherAllMessages(chat):
                     UnknownClass = type(msg).__name__
                     logging.warning("TLMERGER EXCEPTION: Unsupported media found: " + UnknownClass)
                 elif isinstance(msg.media, (MessageMediaDocument, Document)):
-                    PendingTweaks = True
                     mimeType = msg.media.document.mime_type
                     mediaType = "Document"
                     DocType = True
@@ -1072,7 +1082,6 @@ def GatherAllMessages(chat):
                         elif isinstance(attr, DocumentAttributeFilename):
                             FileName = attr.file_name
                         elif isinstance(attr, DocumentAttributeAnimated):
-                            PendingTweaks = True
                             mediaType = "Animated GIF"
                         elif isinstance(attr, DocumentAttributeImageSize):
                             mediaType = "Uncompressed Image"
@@ -1103,8 +1112,6 @@ def GatherAllMessages(chat):
                         finaloutput = output.replace("\\", "/")
                     except:
                         finaloutput = output
-                    #output = None
-                    #finaloutput = None                    
                     reg4 = (msg.id, FileName, finaloutput)
                     db.execute("INSERT INTO MediaPaths VALUES(?,?,?)", reg4)
             elif hasattr(msg, 'message'):
@@ -1155,7 +1162,7 @@ def GatherAllMessages(chat):
                     elif fwd_channel_id:
                         fwd_from_id = get_peer_id(fwd_channel_id)
                         fwd_from_channel = True
-            #logging.warning("ID: " + str(msg.id))
+
             reg5 = (sender, from_id, msg.id, message, msg.out, system_message, reply_to_msg_id, via_bot_username, fwd_from_id, fwd_from_channel, has_media, DocType, mediaType, mimeType, UnknownType, UnknownClass, day, month, year, hour, minute, second)
             db.execute("INSERT INTO OriginalChat VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", reg5)
             completed = (completed + 1)
@@ -1174,10 +1181,69 @@ def GatherAllMessages(chat):
         exit(0)
     return
 
+def RefreshFileRefs(user1, user2):
+    global FetchableMsgIDs, FetchableMsgIDsUser2, SelfUser2, SelfUser1, database
+    database.commit()
+    if not SoloImporting:
+        cur1 = database.cursor()
+        docmsg = client2.get_messages(user1, ids=FetchableMsgIDsUser2)
+        for msg in docmsg:
+            if getattr(msg, 'media', None):
+                if isinstance(msg.media, (MessageMediaDocument, Document)):
+                    access_hash = msg.media.document.access_hash
+                    file_reference = msg.media.document.file_reference
+                    document_id = msg.media.document.id
+
+                    cur1.execute("UPDATE DocumentMediaInfo SET AccessHashUser2=?, FileReferenceUser2=? WHERE DocumentID=?",
+                        (access_hash, file_reference, document_id))
+                            
+                elif isinstance(msg.media, (MessageMediaPhoto, Photo, PhotoSize, PhotoCachedSize)):
+                    access_hash = msg.media.photo.access_hash
+                    file_reference = msg.media.photo.file_reference
+                    document_id = msg.media.photo.id
+
+                    cur1.execute("UPDATE PhotoMediaInfo SET AccessHashUser2=?, FileReferenceUser2=? WHERE DocumentID=?",
+                        (access_hash, file_reference, document_id))
+
+        database.commit()
+        cur1.close()
+    originalIds = []
+    cur = database.cursor()
+    cur.execute("SELECT message_id FROM DocumentMediaInfo GROUP BY DocumentID")
+    for row in cur:
+        originalIds.append(row[0])
+    cur.execute("SELECT message_id FROM PhotoMediaInfo GROUP BY DocumentID")
+    for row in cur:
+        originalIds.append(row[0])
+    cur.close()
+    cur2 = database.cursor()
+    docmsg = client1.get_messages(ChosenChat, ids=originalIds)
+    for msg in docmsg:
+        if getattr(msg, 'media', None):
+            if isinstance(msg.media, (MessageMediaDocument, Document)):
+                access_hash = msg.media.document.access_hash
+                file_reference = msg.media.document.file_reference
+                document_id = msg.media.document.id
+
+                cur2.execute("UPDATE DocumentMediaInfo SET AccessHash=?, FileReferenceUser1=? WHERE DocumentID=?",
+                        (access_hash, file_reference, document_id))
+
+            elif isinstance(msg.media, (MessageMediaPhoto, Photo, PhotoSize, PhotoCachedSize)):
+                access_hash = msg.media.photo.access_hash
+                file_reference = msg.media.photo.file_reference
+                document_id = msg.media.photo.id
+
+                cur2.execute("UPDATE PhotoMediaInfo SET AccessHash=?, FileReferenceUser1=? WHERE DocumentID=?",
+                    (access_hash, file_reference, document_id))
+    database.commit()
+    cur2.close()
+    del originalIds
+    return
+
 def ExportMessages():
     global Errors, SendAllLinkPreviews, SendDatabase, AgressiveTimestamps, YYYYMMDD, ReversedDate, DateSeconds, DateEnd, NoTimestamps, \
-        client1, client2, AppendHashtag, SelfUser1, SelfUser2, ChosenChat, DestinationChat, DeleteOriginalMessages, PendingTweaks, \
-        User1IDs, User2IDs, peer, SoloImporting
+        client1, client2, AppendHashtag, SelfUser1, SelfUser2, ChosenChat, DestinationChat, DeleteOriginalMessages, \
+        User1IDs, User2IDs, peer, SoloImporting, FetchableMsgIDs, database
     print("\nProcessing...")
     client2.get_dialogs(limit=None)
     if not SoloImporting:
@@ -1191,29 +1257,24 @@ def ExportMessages():
         user1 = client1.get_input_entity(DestinationChat)
 
     database = DBConnection(False, False)
-    if PendingTweaks is True and not SoloImporting:
+    if not SoloImporting:
         AccessHash = []
         DocID = []
-        MsgIDs = []
         PhotoID = []
         PhotoAccHash = []
         PhotoFileRef = []
         DocFileRef = []
         print("\nWe need to get some data from Telegram before starting. Preparing, this might take a while...")
         db = database.cursor()
-        db.execute('SELECT * FROM DocumentMediaInfo')
+        db.execute('SELECT * FROM DocumentMediaInfo WHERE AccessHashUser2 IS NULL GROUP BY DocumentID')
         for row in db:
-            if row[3] is not None:
-                continue
             if row[1] not in DocID:
                 DocID.append(row[1])
                 AccessHash.append(row[2])
                 DocFileRef.append(row[4])
         db2 = database.cursor()
-        db2.execute('SELECT * FROM PhotoMediaInfo')
+        db2.execute('SELECT * FROM PhotoMediaInfo WHERE AccessHashUser2 IS NULL GROUP BY DocumentID')
         for row in db2:
-            if row[3] is not None:
-                continue
             if row[1] not in PhotoID:
                 PhotoID.append(row[1])
                 PhotoAccHash.append(row[2])
@@ -1234,7 +1295,7 @@ def ExportMessages():
             request = SendMediaRequest(user2, media=InputMediaDocument(id=InputDocument(id=docid, access_hash=AccessHash[index], file_reference=DocFileRef[index])), message="")
             result = SendRequestClient1(request)
             msg = client1._get_response_message(request, result, user2)
-            MsgIDs.append(msg.id)
+            FetchableMsgIDs.append(msg.id)
             complete = complete + 1
             b.update(complete)
         for photoid in PhotoID:
@@ -1247,33 +1308,44 @@ def ExportMessages():
             request = SendMediaRequest(user2, media=InputMediaPhoto(id=InputPhoto(id=photoid, access_hash=PhotoAccHash[index], file_reference=PhotoFileRef[index])), message="")
             result = SendRequestClient1(request)
             msg = client1._get_response_message(request, result, user2)
-            MsgIDs.append(msg.id)
+            FetchableMsgIDs.append(msg.id)
             complete = complete + 1
             b.update(complete)
         Placeholder.clear()
         DeleteMessageClient2(user1, message_ids=msg2placeholder, revoke=True)
         b.finish()
         print("\nFetching media metadata from the receiver account...\nPlease wait, this can take a while...")
+        cursor = database.cursor()
         docmsg = client2.get_messages(user1, limit=length)
         for msg in docmsg:
             if getattr(msg, 'media', None):
                 if isinstance(msg.media, (MessageMediaDocument, Document)):
-                    database.execute("UPDATE DocumentMediaInfo SET AccessHashUser2=?, FileReferenceUser2=? WHERE DocumentID=?",
-                        (msg.media.document.access_hash, msg.media.document.file_reference, msg.media.document.id))
+                    access_hash = msg.media.document.access_hash
+                    file_reference = msg.media.document.file_reference
+                    document_id = msg.media.document.id
+                    cursor.execute("UPDATE DocumentMediaInfo SET AccessHashUser2=?, FileReferenceUser2=? WHERE DocumentID=?",
+                        (access_hash, file_reference, document_id))
+
                 elif isinstance(msg.media, (MessageMediaPhoto, Photo, PhotoSize, PhotoCachedSize)):
-                    database.execute("UPDATE PhotoMediaInfo SET AccessHashUser2=?, FileReferenceUser2=? WHERE DocumentID=?",
-                        (msg.media.photo.access_hash, msg.media.photo.file_reference, msg.media.photo.id))
+                    access_hash = msg.media.photo.access_hash
+                    file_reference = msg.media.photo.file_reference
+                    document_id = msg.media.photo.id
+                    cursor.execute("UPDATE PhotoMediaInfo SET AccessHashUser2=?, FileReferenceUser2=? WHERE DocumentID=?",
+                        (access_hash, file_reference, document_id))
+
+            FetchableMsgIDsUser2.append(msg.id)
         database.commit()
-        DeleteMessageClient1(user2, message_ids=MsgIDs, revoke=True)
-        MsgIDs.clear()
+        cursor.close()
         AccessHash.clear()
         DocID.clear()
         PhotoID.clear()
         PhotoAccHash.clear()
         PhotoFileRef.clear()
         DocFileRef.clear()
+        del cursor, AccessHash, DocID, PhotoID, PhotoAccHash, PhotoFileRef, DocFileRef
         print("\n\nEverything is prepared and ready. Copying messages to the new chat...")
-    print("\nINFORMATION: Each 2000 messages, a pause of around 7 minutes will be done for reducing Telegram's flood limits.\nBe patient, the process will be still going on.")
+    print("\nINFORMATION: Each 1000 messages, a pause will happen because TLMerger needs to refresh metadata due to Telegram's restrictions.")
+    print("Although the process might look like it's stuck, don't close or cancel it because you think it's stuck. Whenever an error happens, you will be informed.")
     completed = 0
     RawLoopCount = 0
     hashtag = ("\n#TLMerger")
@@ -1410,10 +1482,10 @@ def ExportMessages():
                         else:
                             FwdName = get_display_name(ent)
                     if via_bot_username is None:
-                        ForwardedHeader = ("➡️**Forwarded from " + FwdName + "**\n")
+                        ForwardedHeader = ("➡️ **Forwarded from " + FwdName + "**\n")
                     else:
                         via_bot_username = row[7]
-                        ForwardedHeader = ("➡️**Forwarded from " + FwdName + via_bot_username + "**\n")
+                        ForwardedHeader = ("➡️ **Forwarded from " + FwdName + via_bot_username + "**\n")
 
                 if fwd_from_id is None and via_bot_username is not None:
                     message = via_bot_username + "\n" + message
@@ -1429,6 +1501,7 @@ def ExportMessages():
                         NewReplyId = row[1]
                     else:
                         NewReplyId = row[2]
+                db1.close()
 
             if system_message is True:
                 message = "__System Message:__ " + message
@@ -1816,6 +1889,7 @@ def ExportMessages():
                     for row in db2:
                         hintPath = row[2]
                         FileName = row[1]
+                    db2.close()
 
                 if (mediaType == "Animated GIF" and mimeType == "image/gif"):
                     if out is True:
@@ -2104,6 +2178,7 @@ def ExportMessages():
                                     result = SendRequestClient2(request)
                                     msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
+                    db40.close()
 
                 elif DocType is True and (mediaType == "StickerPack" or mediaType == "HasSticker" or mediaType == "VideoNote"):
                     db60 = database.cursor()
@@ -2236,6 +2311,7 @@ def ExportMessages():
                                 msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                 User2IDs.append(msg2.id)
                                 User1IDs.append(GetIncomingIdOfUser2(user2))
+                    db60.close()
 
                 elif DocType is True:
                     db60 = database.cursor()
@@ -2435,6 +2511,7 @@ def ExportMessages():
                                     result = SendRequestClient2(request)
                                     msg = client2._get_response_message(request, result, user1)
                                     NewUser1ID = GetIncomingIdOfUser2(user2)
+                    db60.close()
 
                 elif mediaType == "Contact":
                     db4 = database.cursor()
@@ -2546,6 +2623,7 @@ def ExportMessages():
                                     msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                     User2IDs.append(msg2.id)
                                     User1IDs.append(GetIncomingIdOfUser2(user2))
+                    db4.close()
 
                 elif mediaType == "Game":
                     if out is True:
@@ -2703,6 +2781,7 @@ def ExportMessages():
                                 msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                 User2IDs.append(msg2.id)
                                 User1IDs.append(GetIncomingIdOfUser2(user2))
+                    db6.close()
 
                 elif mediaType == "Geo":
                     db7 = database.cursor()
@@ -2813,6 +2892,7 @@ def ExportMessages():
                                 msg2 = SendMessageClient2(user1, ForwardedHeader, reply_to=msg.id)
                                 User2IDs.append(msg2.id)
                                 User1IDs.append(GetIncomingIdOfUser2(user2))
+                    db7.close()
 
                 elif SendAllLinkPreviews is True and mediaType == "WebPage Preview":
                     PreviewCaption = "`Original Link Preview 👆🏻`"
@@ -3184,30 +3264,40 @@ def ExportMessages():
                     logging.warning("TLMERGER EXCEPTION IN EXPORTINGMESSAGES: Media conditions weren't met while exporting messages. Message ID: " + str(id) + ". Unknown Class: " + UnkownClass)
                     print("\nAn error happened and it has been written inside the log.")
                     Errors = True
-            
+            cursor = database.cursor()
             if out is True:
                 User1IDs.append(msg.id)
                 if not SoloImporting:
+                    client2.send_read_acknowledge(user1, max_id=0)
                     if NewUser2ID is None:
                         NewUser2ID = GetIncomingIdOfUser1(user1)
                     User2IDs.append(NewUser2ID)
                     reg = (id, msg.id, NewUser2ID)
                 else:
                     reg = (id, msg.id, msg.id)
-                database.execute("INSERT INTO NewChat VALUES(?,?,?)", reg)
+                cursor.execute("INSERT INTO NewChat VALUES(?,?,?)", reg)
             else:
+                client1.send_read_acknowledge(user2, max_id=0)
                 User2IDs.append(msg.id)
                 if NewUser1ID is None:
                     NewUser1ID = GetIncomingIdOfUser2(user2)
                 User1IDs.append(NewUser1ID)
                 reg1 = (id, NewUser1ID, msg.id)
-                database.execute("INSERT INTO NewChat VALUES(?,?,?)", reg1)
-            database.commit()
+                cursor.execute("INSERT INTO NewChat VALUES(?,?,?)", reg1)
+            cursor.close()
+            del cursor
             completed = (completed + 1)
             RawLoopCount = RawLoopCount + 1
             bar.update(completed)
-            if RawLoopCount == 2000:
-                time.sleep(420)
+            # Seems that with modern Telethon versions flood waitings are really fine tuned, so let it handle them is the best idea. Instead,
+            # we refresh the file references each 2000 messages.
+            # if RawLoopCount == 2000:
+            if RawLoopCount == 1000:
+                # time.sleep(420)
+                if not SoloImporting:
+                    RefreshFileRefs(user1, user2)
+                else:
+                    RefreshFileRefs(None, user2)
                 RawLoopCount = 0
         client1.send_read_acknowledge(user2, max_id=0)
         if not SoloImporting:
@@ -3239,14 +3329,9 @@ def ExportMessages():
             IDsToDelete = []
             db20 = database.cursor()
             db20.execute('SELECT * FROM OriginalChat')
-            for row in db20:
-                if (len(IDsToDelete) == 100):
-                    DeleteMessageClient1(ChosenChat, message_ids=IDsToDelete)
-                    IDsToDelete.clear()
-                IDsToDelete.append(row[2])
-            if len(IDsToDelete) != 0:
-                DeleteMessageClient1(ChosenChat, message_ids=IDsToDelete)
-                IDsToDelete.clear()
+            IDsToDelete = list(db20.fetchall()[2])
+            DeleteMessageClient1(ChosenChat, message_ids=IDsToDelete)
+            del IDsToDelete
         DBConnection(False, True)
         print("Changes saved! You will be able to use TLRevert to revert the changes made by TLMerger in the future, and remove all the messages sent by the application.")
         if SendDatabase is True:
@@ -3261,6 +3346,7 @@ def ExportMessages():
         bar.finish()
         print("\nThe process has been cancelled. Saving changes in the database...")
         if not SoloImporting:
+            DeleteMessageClient1(SelfUser2, message_ids=FetchableMsgIDs, revoke=True)
             reg8 = (SelfUser1.id, SelfUser2.id, SelfUser1.first_name + " (+" + SelfUser1.phone + ")", SelfUser2.first_name + " (+" + SelfUser2.phone + ")", client1.get_messages(user2, limit=0).total, client2.get_messages(user1, limit=0).total, count, SoloImporting)
         else:
             reg8 = (SelfUser1.id, None, SelfUser1.first_name + " (+" + SelfUser1.phone + ")",
@@ -3285,6 +3371,7 @@ def ExportMessages():
         print("Something went wrong in our side. This is the full exception:\n\n"  + str(e))
         print("\nSaving changes in the database, so you can use TLRevert to revert the changes made by TLMerger and remove all the messages sent by the application...")
         if not SoloImporting:
+            DeleteMessageClient1(SelfUser2, message_ids=FetchableMsgIDs, revoke=True)
             reg8 = (SelfUser1.id, SelfUser2.id, SelfUser1.first_name + " (+" + SelfUser1.phone + ")", SelfUser2.first_name + " (+" + SelfUser2.phone + ")", client1.get_messages(user2, limit=0).total, client2.get_messages(user1, limit=0).total, count, SoloImporting)
         else:
             reg8 = (SelfUser1.id, None, SelfUser1.first_name + " (+" + SelfUser1.phone + ")",
@@ -3304,7 +3391,7 @@ def ExportMessages():
 
 def DBConnection(first, close):
     try:
-        conn = sqlite3.connect("data\TLMerger-Database.db")        
+        conn = sqlite3.connect("data\TLMerger-Database.db", timeout=10)        
         if first is True:
             print("Created database successfully!")
         if close is True:
@@ -3349,6 +3436,14 @@ os.mkdir('data')
 print("\nCreating database...")	
 database = DBConnection(True, False)
 CreateTables(database)
+print("By default, Telegram returns the hours in GMT+0. If this is not your timezone, please, write how many hours we need to add or substract for your timezone")
+print("\nExamples: If GMT+1, type 1. If it's GMT-9, type -9. If it's GMT+0, type 0.")
+while True:
+    try:
+        timezonediff = int(input("How much we need to sum/substract to the hours?: "))
+        break
+    except ValueError:
+        print("This is not a valid number, please, try again\n")
 getpass("\nNow, you must choose the chat from which we are going to copy the messages: The 'Source' chat. Press ENTER to continue: ")
 print("Gathering chat list from " + SelfUser1.first_name + "...")
 ChosenChat = PrintChatList()
