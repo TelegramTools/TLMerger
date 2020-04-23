@@ -3329,7 +3329,9 @@ def ExportMessages():
             IDsToDelete = []
             db20 = database.cursor()
             db20.execute('SELECT * FROM OriginalChat')
-            IDsToDelete = list(db20.fetchall()[2])
+            for row in db20:
+                IDsToDelete.append(row[2])
+            db20.close()
             DeleteMessageClient1(ChosenChat, message_ids=IDsToDelete)
             del IDsToDelete
         DBConnection(False, True)
