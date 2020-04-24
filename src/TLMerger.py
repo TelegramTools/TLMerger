@@ -3267,7 +3267,7 @@ def ExportMessages():
                                 User1IDs.append(GetIncomingIdOfUser2(user2))
 
                 else:
-                    logging.warning("TLMERGER EXCEPTION IN EXPORTINGMESSAGES: Media conditions weren't met while exporting messages. Message ID: " + str(id) + ". Unknown Class: " + UnkownClass)
+                    logging.warning("TLMERGER EXCEPTION IN EXPORTINGMESSAGES: Media conditions weren't met while exporting messages. Message ID: " + str(id) + ". Unknown Class: " + UnknownClass)
                     print("\nAn error happened and it has been written inside the log.")
                     Errors = True
             cursor = database.cursor()
