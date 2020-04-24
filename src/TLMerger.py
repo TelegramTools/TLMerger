@@ -106,6 +106,7 @@ async def EventHandler(event):
     return
 
 def AskSoloMode():
+    global SoloImporting
     while True:
         answer = None
         answer = input(
@@ -549,6 +550,8 @@ def PrintChatList():
         while i is None:
             print("This is the chat list:\n\n")
             for i, dialog in enumerate(dialogs, start=1):
+                if i == 3:
+                    break
                 if get_display_name(dialog.entity) == "":
                     name = "Deleted Account"
                 elif isinstance(dialog.entity, InputPeerSelf):
