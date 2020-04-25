@@ -943,24 +943,21 @@ def CommitMessages(database, stats):
     cursor = database.cursor()
     if stats:
         if not SoloImporting:
-            reg8 = (SelfUser1.id, SelfUser2.id, SelfUser1.first_name + " (+" + SelfUser1.phone + ")", SelfUser2.first_name + " (+" + SelfUser2.phone + ")", client1.get_messages(SelfUser2, limit=0).total, client2.get_messages(SelfUser1, limit=0).total, count, 1)
+            reg8 = (SelfUser1.id, SelfUser2.id, SelfUser1.first_name + " (+" + SelfUser1.phone + ")", SelfUser2.first_name +\
+                " (+" + SelfUser2.phone + ")", client1.get_messages(SelfUser2, limit=0).total, client2.get_messages(SelfUser1, limit=0).total, count, 1)
         else:
             reg8 = (SelfUser1.id, None, SelfUser1.first_name + " (+" + SelfUser1.phone + ")",
                     None, client1.get_messages(SelfUser1, limit=0).total,
                     None, count, 1)
         cursor.execute("INSERT INTO Statistics VALUES(?,?,?,?,?,?,?,?)", reg8)
-    for id1 in User1IDs:
-        reg5 = (id1, None)
+    for id1, id2 in zip(User1IDs, User2IDs):
+        reg5 = (id1, id2)
         cursor.execute("INSERT INTO SentMessagesIDs VALUES(?,?)", reg5)
     database.commit()
-    LoopingCount = 0
-    for id1 in User1IDs:
-        if len(User2IDs) != 0:
-            cursor.execute("UPDATE SentMessagesIDs SET User2={id} WHERE User1={user1id}". \
-                             format(user1id=id1, id=User2IDs.pop(0)))
-            LoopingCount = LoopingCount + 1
-        else:
-            break
+    if len(User1IDs) != 0:
+        for id1 in User1IDs:
+            reg5 = (id1, None)
+            cursor.execute("INSERT INTO SentMessagesIDs VALUES(?,?)", reg5)
     if len(User2IDs) != 0:
         for id2 in User2IDs:
             reg5 = (None, id2)
