@@ -98,7 +98,7 @@ sources using the same password for it to work. You can specify the password use
 
 This couldn't be possible without [Telethon](https://github.com/LonamiWebs/Telethon), and his great creator, [Lonami](https://github.com/Lonami), who always was ready to answer some questions and helping in development.
 
-And also without [PyInstaller](https://www.pyinstaller.org/), which I used to build the binaries.
+Thanks to the [PyInstaller](https://www.pyinstaller.org/) team for their great tool, which I used to build the binaries.
 
 Also, huge acknowledgements to Telegram for making such a great messenger!
 
