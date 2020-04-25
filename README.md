@@ -43,8 +43,11 @@ See how logging another user works. We are going to merge this chat from the use
   <img src="https://github.com/TelegramTools/TLSecret/raw/master/images/secret_mode-demo.webp">
  </p>
 
-The demo chat used is very simple, but TLMerger can move successfully files, gifs, images, stickers, voice notes, video notes, contacts, live locations, locations,
-games, link previews. You can customize some of the settings related to some kinds of media in TLMerger's menus (see video above to see the options).
+The demo chat used is very simple, but TLMerger can copy **files, gifs, images, stickers, voice notes, video notes, contacts, live locations, locations,
+games and link previews.** You can customize some of the settings related to some kinds of media in TLMerger's menus (see video above to see the options).
+
+The copy of most of the content **is exclusively done server-side**, so don't worry, you don't need a fast Internet connection to re-upload the files.
+Only the **link previews** will be downloaded and re-uploaded (if you decide you want to keep them in your merging settings)
 
 ## How to use?
 
