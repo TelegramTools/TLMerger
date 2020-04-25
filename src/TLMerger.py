@@ -18,11 +18,12 @@ from telethon.utils import *
 from telethon.sessions import *
 import pyAesCrypt
 
+__version__ = '1.1'
 api_id = YOUR_API_ID_HERE
 api_hash = 'YOUR_API_HASH_HERE'
 TLdevice_model = 'Desktop device'
 TLsystem_version = 'Console'
-TLapp_version = '- TLMerger 1.1'
+TLapp_version = '- TLMerger ' + __version__
 TLlang_code = 'en'
 TLsystem_lang_code = 'en'
 found_media = {}
@@ -896,6 +897,7 @@ def DownloadMedia(*args, **kwargs):
         return DownloadMedia(*args, **kwargs)
 
 def CreateTables(db):
+    global __version__
     cursor = db.cursor()
     cursor.execute("PRAGMA journal_mode = wal")
     cursor.execute("PRAGMA read_uncommitted = true;")
@@ -926,7 +928,7 @@ def CreateTables(db):
     CREATE TABLE Version(AppName TEXT, AppVersion TEXT, CreationDate TEXT)''')
     db.commit()
     current_date = str(date.today())
-    reg = ("TLMerger", "1.1", current_date)
+    reg = ("TLMerger", __version__, current_date)
     cursor.execute("INSERT INTO Version VALUES(?,?,?)", reg)
     db.commit()
     cursor.close()
