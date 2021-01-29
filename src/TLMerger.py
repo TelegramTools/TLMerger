@@ -1255,7 +1255,7 @@ def ExportMessages():
         client1, client2, AppendHashtag, SelfUser1, SelfUser2, ChosenChat, DestinationChat, DeleteOriginalMessages, \
         User1IDs, User2IDs, peer, SoloImporting, FetchableMsgIDs, database
     print("\nProcessing...")
-    client2.get_dialogs(limit=None)
+
     if not SoloImporting:
         try:
             user1 = client2.get_input_entity(SelfUser1.phone)
@@ -1275,6 +1275,7 @@ def ExportMessages():
         PhotoFileRef = []
         DocFileRef = []
         print("\nWe need to get some data from Telegram before starting. Preparing, this might take a while...")
+        client2.get_dialogs(limit=None)
         db = database.cursor()
         db.execute('SELECT * FROM DocumentMediaInfo WHERE AccessHashUser2 IS NULL GROUP BY DocumentID')
         for row in db:
